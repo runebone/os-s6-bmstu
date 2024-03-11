@@ -40,6 +40,9 @@ int main()
 {
     struct epoll_event ev, events[MAX_EVENTS];
     int conn_sock, nfds, epollfd;
+    struct sigaction sa;
+    struct sockaddr_in serv_addr;
+    unsigned int addrlen;
 
     listen_sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -49,7 +52,6 @@ int main()
         exit(1);
     }
 
-    struct sigaction sa;
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
@@ -59,11 +61,9 @@ int main()
         exit(1);
     }
 
-    struct sockaddr_in serv_addr;
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(5000);
-    unsigned int addrlen;
 
     if (bind(listen_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
@@ -129,9 +129,7 @@ int main()
                     {
                         ssize_t count;
                         char buf[1024];
-
                         /* printf("DBG:conn_sock: %d\n", conn_sock); */
-
                         /* count = read(events[n].data.fd, buf, sizeof(buf)); */
                         count = read(conn_sock, buf, sizeof(buf));
                         /* printf("DBG: read done %ld\n", count); */
@@ -156,7 +154,6 @@ int main()
                             done = 1;
                             break;
                         }
-
                         /* if (write(events[n].data.fd, */
                         if (write(conn_sock,
                                     ((struct mymsg *)buf)->name,

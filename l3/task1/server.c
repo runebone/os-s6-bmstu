@@ -18,6 +18,12 @@ void sig_handler()
 
 int main()
 {
+    struct sockaddr serv_addr, clnt_addr;
+    struct sigaction sa;
+    int socklen, bytes;
+    char buf[256], tmp[256];
+    unsigned int addrlen;
+
     sockfd = socket(AF_UNIX, SOCK_DGRAM, 0);
 
     if (sockfd < 0)
@@ -26,11 +32,10 @@ int main()
         exit(1);
     }
 
-    struct sockaddr serv_addr;
     serv_addr.sa_family = AF_UNIX;
     strcpy(serv_addr.sa_data, SOCK_NAME);
 
-    int socklen = strlen(serv_addr.sa_data)
+    socklen = strlen(serv_addr.sa_data)
         + sizeof(serv_addr.sa_family);
     if (bind(sockfd, &serv_addr, socklen) < 0)
     {
@@ -38,7 +43,6 @@ int main()
         exit(1);
     }
 
-    struct sigaction sa;
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
@@ -47,11 +51,6 @@ int main()
         perror("sigaction");
         exit(1);
     }
-
-    int bytes;
-    char buf[256], tmp[256];
-    struct sockaddr clnt_addr;
-    unsigned int addrlen;
 
     for (;;)
     {
@@ -64,7 +63,6 @@ int main()
         }
         
         printf("recv %s from %s\n", buf, clnt_addr.sa_data);
-
         sprintf(tmp, "OK %s", buf);
 
         if (sendto(sockfd, tmp, strlen(tmp), 0, &clnt_addr, addrlen) < 0)

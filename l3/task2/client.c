@@ -22,6 +22,12 @@ void sig_handler()
 
 int main()
 {
+    struct sigaction sa;
+    struct sockaddr_in serv_addr;
+    struct mymsg msg;
+    char recv_data[1024];
+    int recv_size;
+
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0)
@@ -30,7 +36,6 @@ int main()
         exit(1);
     }
 
-    struct sigaction sa;
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
@@ -40,16 +45,13 @@ int main()
         exit(1);
     }
 
-    struct sockaddr_in serv_addr;
     /* memset(&serv_addr, 0, sizeof(serv_addr)); */
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     serv_addr.sin_port = htons(5000);
 
-    struct mymsg msg;
     memset(&msg, 0, 1024);
     msg.pid = getpid();
-
 
     printf("PID: %d\n", msg.pid);
     printf("Input username: ");
@@ -60,10 +62,7 @@ int main()
     fgets(msg.data, 987, stdin);
     *strrchr(msg.data, '\n') = 0;
 
-    char recv_data[1024];
     memset(recv_data, 0, 1024);
-
-    int recv_size;
 
     if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
@@ -79,9 +78,7 @@ int main()
         /*     perror("write"); */
         /*     exit(1); */
         /* } */
-
         /* printf("DBG:name = %s:pid = %d:data = %s\n", msg.name, msg.pid, msg.data); */
-
         if ((recv_size = read(sockfd, recv_data, 1024)) < 0)
         {
             perror("read");

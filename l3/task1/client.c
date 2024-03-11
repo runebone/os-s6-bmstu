@@ -11,6 +11,11 @@ int sockfd;
 
 int main()
 {
+    struct sockaddr serv_addr, clnt_addr;
+    int socklen, bytes, pid;
+    char buf[256];
+    unsigned int addrlen;
+    
     sockfd = socket(AF_UNIX, SOCK_DGRAM, 0);
 
     if (sockfd < 0)
@@ -19,16 +24,14 @@ int main()
         exit(1);
     }
 
-    struct sockaddr serv_addr;
     serv_addr.sa_family = AF_UNIX;
     strcpy(serv_addr.sa_data, SOCK_NAME);
 
-    struct sockaddr clnt_addr;
     clnt_addr.sa_family = AF_UNIX;
     strcpy(clnt_addr.sa_data, "client.soc");
     /* sprintf(clnt_addr.sa_data, "%d.soc", getpid()); */
 
-    int socklen = strlen(clnt_addr.sa_data)
+    socklen = strlen(clnt_addr.sa_data)
         + sizeof(clnt_addr.sa_family);
     if (bind(sockfd, &clnt_addr, socklen) < 0)
     {
@@ -36,11 +39,7 @@ int main()
         exit(1);
     }
 
-    int bytes;
-    char buf[256];
-    unsigned int addrlen;
-
-    int pid = getpid();
+    pid = getpid();
     sprintf(buf, "%d", pid);
     printf("send %d to serv\n", pid);
 
