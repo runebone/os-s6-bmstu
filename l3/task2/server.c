@@ -1,4 +1,3 @@
-#include <string.h>
 #include <unistd.h>
 #include <sys/epoll.h>
 #include <netinet/in.h>
@@ -8,6 +7,7 @@
 #include <errno.h>
 #include "mymsg.h"
 #include <signal.h>
+#include <arpa/inet.h>
 
 /* #define SOCK_NAME "server.soc" */
 #define MAX_EVENTS 10
@@ -62,8 +62,9 @@ int main()
     }
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(5000);
+    /* serv_addr.sin_addr.s_addr = INADDR_ANY; */
+    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    serv_addr.sin_port = htons(9234);
 
     if (bind(listen_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
@@ -129,10 +130,7 @@ int main()
                     {
                         ssize_t count;
                         char buf[1024];
-                        /* printf("DBG:conn_sock: %d\n", conn_sock); */
-                        /* count = read(events[n].data.fd, buf, sizeof(buf)); */
                         count = read(conn_sock, buf, sizeof(buf));
-                        /* printf("DBG: read done %ld\n", count); */
                         if (count > 0)
                         {
                             printf("%s (%d): %s\n",
@@ -154,7 +152,6 @@ int main()
                             done = 1;
                             break;
                         }
-                        /* if (write(events[n].data.fd, */
                         if (write(conn_sock,
                                     ((struct mymsg *)buf)->name,
                                     32) == -1)
@@ -162,16 +159,9 @@ int main()
                             perror("write");
                             exit(1);
                         }
-                        /* printf("DBG: write done\n"); */
                     }
-                    /* if (done) */
-                    if (1)
-                    {
-                        /* printf("Closed connection on descriptor %d\n", events[n].data.fd); */
-                        /* close(events[n].data.fd); */
-                        printf("close fd %d conn\n", conn_sock);
-                        close(conn_sock);
-                    }
+                    printf("close fd %d conn\n", conn_sock);
+                    close(conn_sock);
                 }
             }
         }

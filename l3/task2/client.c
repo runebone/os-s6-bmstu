@@ -1,11 +1,7 @@
-#include <string.h>
+/* #include <string.h> */
 #include <unistd.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <arpa/inet.h>
 #include <memory.h>
 #include "mymsg.h"
@@ -48,7 +44,7 @@ int main()
     /* memset(&serv_addr, 0, sizeof(serv_addr)); */
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    serv_addr.sin_port = htons(5000);
+    serv_addr.sin_port = htons(9234);
 
     memset(&msg, 0, 1024);
     msg.pid = getpid();
@@ -71,23 +67,14 @@ int main()
     }
     write(sockfd, &msg, 1024);
 
-    /* for (;;) */
+    if ((recv_size = read(sockfd, recv_data, 1024)) < 0)
     {
-        /* if (write(sockfd, &msg, 1024) < 0) */
-        /* { */
-        /*     perror("write"); */
-        /*     exit(1); */
-        /* } */
-        /* printf("DBG:name = %s:pid = %d:data = %s\n", msg.name, msg.pid, msg.data); */
-        if ((recv_size = read(sockfd, recv_data, 1024)) < 0)
-        {
-            perror("read");
-            exit(1);
-        }
-
-        recv_data[1023] = 0;
-        printf("Server: %s\n", recv_data);
+        perror("read");
+        exit(1);
     }
+
+    recv_data[1023] = 0;
+    printf("Server: %s\n", recv_data);
 
     close(sockfd);
 
