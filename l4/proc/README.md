@@ -8,8 +8,8 @@
 ```
 1) make pm
 2) <Ctrl+Z>
-3) Скопируйте вывод
-4) echo -e "<Ctrl+V>" | sh pm.sh
+3) Скопируйте pid (первая строчка)
+4) sh pm.sh <pid>
 5) fg
 6) <Enter>
 ```
