@@ -1,9 +1,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-/* #include <limits.h> */
-/* #include <fcntl.h> */
-/* #include <linux/types.h> */
 #include <memory.h>
 #include <dirent.h>
 #include <pthread.h>
@@ -12,59 +9,31 @@
 #define BUFSIZE 1024
 #endif // BUFSIZE
 
-#ifndef ENV
-#define ENV 0
-#endif // ENV
-
-#ifndef NTHREADS
-#define NTHREADS 64
-#endif // NTHREADS
-
-/* Задание: написать программу, которая в пользовательском режиме выводит на экран: */
-/* [x] Информацию об окружении процесса (environ) с комментариями; */
-/* [x] Информацию о состоянии (state) процесса с комментариями; */
-/* [x] Вывести информацию из файла cmdline и директории fd; */
-/* [x] Вывести содержание символической ссылки cwd; */
-/* [x] Вывести содержание символической ссылки exe; */
-/* [x] Вывести содержание символической ссылки root; */
-/* [x] Вывести содержание файла comm; */
-/* [x] Вывести содержимое файла io; */
-/* [x] Вывести содержимое файла maps; */
-/* [x] Вывести содержимое поддиректории task. */
-/* [x] Вывести root; */
-/* [another file] Вывести pagemap; */
-
-void *thread_func(void *args)
-{
-    void *m;
-    for (int i = 0; i < 1000; i++) {
-        /* m = malloc(4096 * 1024); */
-        /* memset(m, 0, sizeof(m)); */
-        usleep(1000);
-        /* free(m); */
-    }
-    return NULL;
-}
-
 int main(int argc, char *argv[])
 {
-    pthread_t th[NTHREADS - 1];
-    for (int i = 0; i < NTHREADS - 1; i++)
-    {
-        pthread_create(th + i, NULL, thread_func, NULL);
-    }
-
     // /proc/self/stat
+    if (1)
     {
         char buf[BUFSIZE + 1];
         memset(buf, 0, sizeof(buf));
-        FILE *f = fopen("/proc/self/stat", "r");
+        char stat[BUFSIZE + 1];
+        memset(stat, 0, sizeof(stat));
+        if (argc > 1)
+        {
+            sprintf(stat, "/proc/%s/stat", argv[1]);
+        }
+        else
+        {
+            sprintf(stat, "/proc/self/stat");
+        }
+        FILE *f = fopen(stat, "r");
         fread(buf, 1, BUFSIZE, f);
         printf("%s", buf);
         fclose(f);
     }
 
     // /proc/self/cmdline
+    if (0)
     {
         char buf[BUFSIZE + 1];
         memset(buf, 0, sizeof(buf));
@@ -75,6 +44,7 @@ int main(int argc, char *argv[])
     }
 
     // /proc/self/fd
+    if (0)
     {
         printf("fd:\n"); 
         struct dirent *dirp; 
@@ -99,6 +69,7 @@ int main(int argc, char *argv[])
     }
 
     // /proc/self/cwd, exe, root
+    if (0)
     {
         printf("cwd, exe, root:\n");
         char buf[BUFSIZE + 1];
@@ -112,6 +83,7 @@ int main(int argc, char *argv[])
     }
 
     // /proc/self/comm, io
+    if (0)
     {
         int len = 0;
         char buf[BUFSIZE + 1];
@@ -133,7 +105,17 @@ int main(int argc, char *argv[])
     {
         char buf[BUFSIZE + 1];
         memset(buf, 0, sizeof(buf));
-        FILE *f = fopen("/proc/self/maps", "r");
+        char maps[BUFSIZE + 1];
+        memset(maps, 0, sizeof(maps));
+        if (argc > 1)
+        {
+            sprintf(maps, "/proc/%s/maps", argv[1]);
+        }
+        else
+        {
+            sprintf(maps, "/proc/self/maps");
+        }
+        FILE *f = fopen(maps, "r");
         printf("maps:\n");
         unsigned int start, end;
         /* while (fread(buf, 1, BUFSIZE, f) > 0) */
@@ -156,8 +138,19 @@ int main(int argc, char *argv[])
         memset(str, 0, sizeof(str));
         char path[BUFSIZE + 1]; 
         memset(path, 0, sizeof(path));
-        dp = opendir("/proc/self/task");
         int flag = 0;
+        char task[BUFSIZE + 1];
+        memset(task, 0, sizeof(task));
+        if (argc > 1)
+        {
+            sprintf(task, "/proc/%s/task/", argv[1]);
+        }
+        else
+        {
+            sprintf(task, "/proc/self/task/");
+        }
+        dp = opendir(task);
+        FILE *f = fopen(task, "r");
         while ((dirp = readdir(dp)) != NULL)
         { 
             if ((strcmp(dirp->d_name, ".") != 0) && 
@@ -165,7 +158,7 @@ int main(int argc, char *argv[])
             { 
                 if (!flag)
                 {
-                    sprintf(path, "%s%s", "/proc/self/task/", dirp->d_name);
+                    sprintf(path, "%s%s", task, dirp->d_name);
                     flag = 1;
                 }
                 printf("\ntask/%s", dirp->d_name); 
@@ -186,6 +179,7 @@ int main(int argc, char *argv[])
     }
 
     // /proc/self/root
+    if (0)
     {
         printf("\nroot:\n");
         struct dirent *dirp; 
@@ -207,7 +201,7 @@ int main(int argc, char *argv[])
     }
 
     // /proc/self/environ
-    if (ENV)
+    if (0)
     {
         int len = 0;
         char buf[BUFSIZE + 1];
@@ -225,17 +219,4 @@ int main(int argc, char *argv[])
         printf("\nCLOSING /proc/self/environ\n");
         fclose(f);
     }
-
-    void *m = malloc(4096 * 1024);
-    memset(m, 10, sizeof(m));
-    printf("<Enter> to exit: ");
-    read(0, NULL, 1);
-    free(m);
-
-    for (int i = 0; i < NTHREADS - 1; i++)
-    {
-        pthread_join(th[i], NULL);
-    }
-
-    /* pause(); */
 }

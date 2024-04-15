@@ -1,4 +1,4 @@
-.PHONY: all, com, pm
+.PHONY: all, com, pm, mt
 
 all: a.out
 	@./a.out \
@@ -14,6 +14,9 @@ com: a.out
 pm: pm.c
 	@gcc pm.c -o pm
 	@make com | sh get_pid_and_maps.sh
+
+mt: maps_tasks.c
+	@gcc maps_tasks.c -o mt
 
 a.out: main.c
 	@gcc -g -O0 -DNTHREADS=16 -DENV=1 main.c

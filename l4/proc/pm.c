@@ -117,7 +117,7 @@ int read_pagemap(char * path_buf, unsigned long virt_addr)
     if (GET_BIT(read_val, 62))
         printf("Page swapped\n");
     if (read_val & PM_FILE)
-        printf("Page is file-mapped\n");
+        printf("Page is file-mapped or a shared anonymous page\n");
     if (read_val & PM_SOFT_DIRTY)
         printf("Page is soft-dirty\n");
     if (read_val & PM_MMAP_EXCLUSIVE)

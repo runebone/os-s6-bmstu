@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
-#include <pthread.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
+#include <time.h>
 #include <assert.h>
 #include <signal.h>
 #include "bakery.h"
@@ -21,8 +21,6 @@ static int numbers[128] = {0};
 static int pids[128] = {0};
 static int idx = 0;
 static char ch = 'a';
-
-pthread_mutex_t mutex[2];
 
 pid_t gettid()
 {
@@ -57,11 +55,9 @@ response_t get_number(pid_t pid, data_t data)
         goto exit;
     }
 
-    /* pthread_mutex_lock(&mutex[0]); */
     data.index = idx;
     idx++;
     pids[data.index] = pid;
-    /* pthread_mutex_unlock(&mutex[0]); */
 
 	choosing[data.index] = 1;
 	data.number = get_max_number() + 1;
@@ -105,10 +101,8 @@ response_t get_service(pid_t pid, data_t data)
 
     if (numbers[data.index] != 0)
     {
-        /* pthread_mutex_lock(&mutex[1]); */
         data.letter = ch;
         ch++;
-        /* pthread_mutex_unlock(&mutex[1]); */
 
         gettimeofday(&tv, NULL);
         printf("[Th %08d] Gave letter '%c' to pid %d at "
@@ -145,9 +139,6 @@ int main(int argc, char *argv[])
     struct timeval timeout;
     timeout.tv_sec = TIMEOUT;
     timeout.tv_usec = 0;
-
-    pthread_mutex_init(&mutex[0], NULL);
-    pthread_mutex_init(&mutex[1], NULL);
 
     serv_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (serv_sock < 0)
@@ -187,13 +178,7 @@ int main(int argc, char *argv[])
             exit(1);
         }
 
-        if (pthread_create(&thread_id, NULL, handle_connection, (void*)pth_clnt_sock) < 0)
-        {
-            perror("pthread_create");
-            exit(1);
-        }
-
-        pthread_detach(thread_id);
+        handle_connection((void*)pth_clnt_sock);
     }
 
     if (clnt_sock < 0)
@@ -203,19 +188,6 @@ int main(int argc, char *argv[])
     }
 
     return 0;
-}
-
-void sigpipehandler()
-{
-    time_t mytime = time(NULL);
-    struct tm *now = localtime(&mytime);
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    printf("[Th %08d] recieved SIGPIPE at "
-            TIME_FMT "\n", gettid(),
-            now->tm_hour, now->tm_min, now->tm_sec,
-            tv.tv_usec);
-    /* pthread_exit(0); */
 }
 
 void *handle_connection(void *client_socket)
@@ -230,17 +202,7 @@ void *handle_connection(void *client_socket)
     struct tm *now = localtime(&mytime);
     struct timeval tv;
 
-    struct sigaction sa;
-    sa.sa_handler = sigpipehandler;
-    sa.sa_flags = 0;
-    sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGPIPE, &sa, NULL) < 0)
-    {
-        perror("sigaction");
-        exit(1);
-    }
-
-    while (1)
+    if (1)
     {
         gettimeofday(&tv, NULL);
         printf("[Th %08d] is waiting for command from pid %d at "
@@ -291,13 +253,11 @@ void *handle_connection(void *client_socket)
                         tv.tv_usec);
             }
 
-            /* printf("[DEBUG]: req.pid = %d\nreq.data.index = %d\npids[req.data.index] = %d\nnumbers[req.data.index] = %d\n\n", req.pid, req.data.index, pids[req.data.index], numbers[req.data.index]); */
-
             if (pids[req.data.index] == req.pid)
             {
                 numbers[req.data.index] = 0;
             }
-            break;
+            /* break; */
         }
 
         switch (req.req)
@@ -364,5 +324,5 @@ void *handle_connection(void *client_socket)
             now->tm_hour, now->tm_min, now->tm_sec,
             tv.tv_usec);
 
-    pthread_exit(0);
+    return 0;
 }
